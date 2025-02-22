@@ -1,5 +1,5 @@
 
-# Repo for MECE Spring 25 Project
+# Repo for MECE Spring 25 Group
 
 Contributors:
 
