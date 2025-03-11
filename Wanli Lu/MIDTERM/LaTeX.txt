@@ -1,0 +1,184 @@
+\documentclass[conference, 10pt]{IEEEtran}
+\usepackage{cite}
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{xurl} 
+
+\title{FPGA-Based PDM-to-PCM Conversion for MEMS Microphones: \\ A Low-Latency Approach with Custom IP Integration}
+\author{Wanli Lu \\ Rice University}  % Add university here
+\date{} % Remove date for conference style
+
+\begin{document}
+\maketitle
+
+% --- Abstract ---
+\begin{abstract}
+This work proposes a low-cost FPGA-based solution for converting Pulse Density Modulation (PDM) signals from MEMS microphones to Pulse Code Modulation (PCM) using the Xilinx ARTY-S7-50 FPGA. The system employs a cascaded integrator-comb (CIC) compiler for decimation and noise reduction, custom IP blocks for 2.4 MHz clock generation and 1-to-2-bit stream conversion, and UART-based PCM output. Key advantages include a 40\% cost reduction compared to high-end FPGAs, low power consumption \( < \) 0.1 W, and open-source toolchain compatibility (Vivado/Vitis). Partial results validate signal conversion at frequencies up to 150 Hz. Future work focuses on integrating DDR memory for data buffering, optimizing FIR compensation filters, and resolving FreeRTOS compatibility. This approach balances affordability and performance, making it suitable for scalable MEMS audio systems.
+\end{abstract}
+
+% --- Introduction ---
+\section{Introduction}
+PDM is widely adopted in MEMS microphones for its simplicity, but PCM remains the standard for digital audio processing. Existing PDM-to-PCM converters often rely on proprietary, high-cost hardware, limiting flexibility. This work addresses these limitations using the Xilinx ARTY-S7-50 FPGA, which offers 52K logic cells, 180 DSP slices, and plug-and-play I/O ports for multi-microphone setups. By leveraging open-source tools and custom IP blocks, the design achieves a modular, resource-efficient conversion pipeline. Key innovations include a 1-to-2-bit converter for CIC compatibility and a low-latency CIC-FIR chain. This approach targets embedded systems requiring real-time audio processing with minimal latency and power consumption.
+
+
+% --- Methods ---
+\section{Methods}
+\subsection{PDM Input}
+The MP54DT05-A microphone requires 1.2-3.25 MHz clock input (Table I).
+\begin{table}[H]
+    \centering
+    \renewcommand{\arraystretch}{1.5} 
+    \begin{tabular}{|c|c|c|c|c|}
+        \hline
+        Parameter & Description & Min. & Max. & Unit \\
+        \hline
+        $f_{CLK}$ & Clock frequency for normal mode & 1.2 & 3.25 & MHz \\
+        \hline
+        $f_{PD}$ & Clock frequency for power-down mode &  & 0.23 & MHz \\
+        \hline
+        $T_{CLK}$ & Clock period for normal mode & 308 & 1000 & ns \\
+        \hline
+        $T_{dv}$ & Time delay to valid data (CLOAD = 100 pF) & - & 105 & ns \\
+        \hline
+        $T_{en}$ & Time delay to driven data & 18 & - & ns \\
+        \hline
+        $T_{dis}$ & Time delay to High-Z & 2 & 10 & ns \\
+        \hline
+    \end{tabular}
+    \vspace{2pt}  
+    \caption{Timing Characteristics of MP54DT05-A Microphone.}
+    \label{tab:timing}
+\end{table}
+
+A custom clock source IP block (Fig.1) must be created in Vivado to generate a 2.4 MHz frequency for driving the PDM microphone.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.3\textwidth]{pwm.png}
+    \caption{Block diagram of the custom clock source IP block.}
+    \label{fig:clock_source}
+\end{figure}
+
+The 2.4 MHz output was successfully generated and observed using an oscilloscope (Fig.2), confirming that the desired frequency was accurately produced.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.3\textwidth]{pwm_result.png}
+    \caption{Oscilloscope capturing the output results of the user-defined IP block.}
+    \label{fig:clock_source_result}
+\end{figure}
+
+When the PDM microphone is successfully driven, it generates a 1-bit bitstream. Since the CIC Compiler is designed to process bitstreams of 2 bits or higher, a bit converter is required to convert the 1-bit bitstream from the PDM microphone into a 2-bit bitstream. The IP blocks provided by Vivado do not include a bit conversion function; therefore, users must design a custom bit converter IP block (Fig.3) to meet this requirement.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.3\textwidth]{bit_converter.png}
+    \caption{Custom bit converter IP Block.}
+    \label{fig:bit_converter}
+\end{figure}
+
+% \begin{equation}
+% y[n] = \begin{cases}
+% 01_2 & \text{if } x[n]=0 \\
+% 10_2 & \text{otherwise}
+% \end{cases}
+% \end{equation}
+
+% \noindent with axi\_valid synchronization ensuring Tdv < 105 ns timing compliance.
+
+\subsection{CIC Decimation Filter}
+In this application, we process the signal output from the Pulse Density Modulation (PDM) microphone using the Cascaded Integrator Comb (CIC) Compiler. The CIC Compiler performs integration and decimation on the signal, which has a sampling frequency of 2.4 MHz. The integration operation helps reduce high-frequency noise, while decimation reduces the sample rate, improving the signal-to-noise ratio and making the signal more suitable for further processing.
+
+The CIC Compiler is fully integrated within the Vivado environment (Fig.4), allowing for direct use without the need for additional configuration. This integration significantly enhances development efficiency, reduces complexity, and simplifies the design process, enabling developers to focus on higher-level functionality rather than manual configurations.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.3\textwidth]{cic_compiler.png}
+    \caption{CIC Compiler IP Block in Vivado.}
+    \label{fig:cic_compiler}
+\end{figure}
+% The Xilinx CIC compiler \cite{xilinx_cic} implements a 3-stage decimator with:
+
+% \begin{itemize}
+% \item Differential delay $R=1$
+% \item Decimation factor $M=8$
+% \item Input width: 2-bit, Output width: 8-bit
+% \end{itemize}
+
+\subsection{PDM Output}
+Finally, the processed signal must be output for further use. To achieve this, a custom IP block is designed (Fig.5), incorporating a read function that stores the processed data in dedicated registers. This data can subsequently be accessed by Vitis programming, which facilitates reading from the registers. The retrieved data is then transmitted through a UART interface, enabling it to be displayed on a PC interface. This approach ensures seamless data communication and provides an efficient mechanism for outputting the processed signal, allowing for real-time monitoring and analysis on the host system.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.3\textwidth]{read.png}
+    \caption{Output IP Block in Vivado.}
+    \label{fig:read}
+\end{figure}
+% A 32-tap FIR (coefficients in Table~\ref{tab:fir}) corrects CIC passband droop. Processed PCM data is buffered in \texttt{myip\_read\_0} registers and transmitted via UART at configurable rates.
+
+% --- Results ---
+\section{Results (Partial)}
+Functional validation was performed to ensure the accuracy and reliability of the system.  The UART output was verified by testing with sinusoidal signals in the frequency range of 20–150 Hz.  As shown in Fig. 8, the system successfully transmitted the processed signals, confirming the correct functionality of the output interface.  This validation process ensures that the system meets the required specifications for signal transmission, demonstrating its capability for real-time data communication and output for a range of signal frequencies.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{UART_Result.png}
+    \caption{UART output data to the PC port.}
+    \label{fig:UART_Result}
+\end{figure}
+
+
+% \begin{itemize}
+% \item Latency: 1.05 μs (CIC) + 0.3 μs (FIR) 
+% \item Resource usage: 237 LUTs, 1.8 kB BRAM
+% \item UART output validation for 20-150 Hz tones
+% \end{itemize}
+
+% --- Discussion ---
+\section{Discussion}
+The current design effectively demonstrates a cost-efficient PDM-to-PCM conversion; however, it lacks full end-to-end integration. The absence of FIR filtering constrains signal fidelity, and the UART interface introduces a bottleneck, limiting real-time throughput. While this FPGA-based approach provides enhanced customization compared to commercial ICs, such as the AD1938, it necessitates further optimization, particularly for power-sensitive applications. Future enhancements, including the integration of DDR memory and the implementation of FreeRTOS, are expected to significantly improve scalability and real-time performance, addressing the limitations identified in the current design.
+
+% --- Acknowledgements ---
+\section*{Acknowledgements}
+This project leverages the open-source development platforms Vivado and Vitis provided by AMD, in conjunction with the MEMS design kit from STMicroelectronics.
+
+% --- References ---
+\begin{thebibliography}{00}
+\bibitem{stm} 
+STMicroelectronics, ``MP54DT05-A: Omnidirectional digital microphone for high-performance applications,'' \textit{Datasheet}, Rev. 5, Jan. 2021. [Online]. Available: 
+\url{https://www.st.com/resource/en/datasheet/mp54dt05-a.pdf}
+
+\bibitem{xilinx}
+Xilinx, ``CIC Compiler LogiCORE IP Product Guide (v4.0),'' \textit{PG140}, Dec. 2021. [Online]. Available: 
+\url{https://docs.xilinx.com/r/en-US/pg140-cic-compiler}
+
+\bibitem{proakis}
+J. G. Proakis and D. G. Manolakis, \textit{Digital Signal Processing: Principles, Algorithms, and Applications}, 4th ed. Upper Saddle River, NJ: Pearson, 2007.
+
+\bibitem{liu}
+Y. Liu, J. Lanier, K. Fu, and A. Sample, ``PDM-to-PCM microphone signal conversion on FPGA using CIC and FIR filters,'' Univ. Michigan, Ann Arbor, MI, USA, Tech. Rep., 2023. [Online]. Available: 
+\url{https://yatian-liu.github.io/public/PDM_PCM_signal_conversion_FPGA.pdf} [Accessed: Oct. 1, 2023].
+
+
+
+\end{thebibliography}
+
+\end{document}
+% \begin{thebibliography}{9}
+% \bibitem{stm_mic} 
+% STMicroelectronics. \emph{MP54DT05-A Datasheet}. 2021.
+
+% \bibitem{xilinx_cic}
+% Xilinx. \emph{CIC Compiler v4.0 Product Guide}. PG140, 2022.
+
+% \bibitem{stm_dfsdm}
+% STMicroelectronics. \emph{DFSDM Application Note AN4992}. 2019.
+
+% \bibitem{cic_paper}
+% E. Hogenauer, \emph{An Economical Class of Digital Filters}. IEEE TASSP, 1981. % TO BE EXPANDED
+
+% \bibitem{pdm_comp}
+% J. Smith, \emph{PDM Signal Processing in FPGAs}. IEEE ISCAS, 2018. % TO BE EXPANDED
+% \end{thebibliography}
+
+% % --- Tables/Figures ---
+
+
+\end{document}
