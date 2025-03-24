@@ -94,13 +94,13 @@ def get_q_index(cfsd):
 # siding window to compute quality index for the signal
 # window size 8s, step 0.1s
 data_q_index=[]
-window_dur=8
+window_dur=2
 window_length=int(window_dur*sample_rate)
 step_dur=0.1
 step_length=int(step_dur*sample_rate)
 cf_low=0
 cf_high=1.5
-alphas = np.arange(cf_low,cf_high, 0.2)
+alphas = np.arange(cf_low,cf_high, 0.1)
 taus = np.arange(-1000, 1000)
 for i in range(0,len(data)-window_length+1,int(step_length)):
     data_seg=data[i:i+window_length]
@@ -109,7 +109,7 @@ for i in range(0,len(data)-window_length+1,int(step_length)):
     data_q_index.append(q_index)
     print(f"q_index for {i}",q_index)
 #plt.plot(data_q_index)
-
+np.savetxt("data_q_index_2_window.txt", data_q_index)
 
 # outcome overview
 fig, axes = plt.subplots(2, 1, figsize=(10, 8))  # 2x2 grid of subplots
@@ -118,7 +118,7 @@ fig, axes = plt.subplots(2, 1, figsize=(10, 8))  # 2x2 grid of subplots
 axes[0].plot(np.linspace(0, len(data)/sample_rate, len(data)), data)
 axes[0].set_title("PCG signal")
 
-axes[1].plot(np.linspace(0, len(data_q_index)*step_dur, len(data_q_index)), data_q_index)
+axes[1].plot(np.linspace(0, len(data)/sample_rate, len(data_q_index)), data_q_index)
 axes[1].set_title("Quality index")
 plt.savefig("output.png")
 
