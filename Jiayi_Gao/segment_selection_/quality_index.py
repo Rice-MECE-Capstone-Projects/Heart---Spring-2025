@@ -2,11 +2,15 @@
 # coding: utf-8
 
 # # Signal Selection
-# 
+#
 
+import time
+
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import wavfile
-import matplotlib.pyplot as plt
+
+np.random.seed(0)  # Making sure results are reproducible across runs
 
 
 # load data
@@ -86,6 +90,40 @@ def get_cfsd(alphas,data):
     return CFSD
 
 
+def get_cfsd_optimized(data, alphas, taus):
+    """
+    The cross-correlation can be efficiently computed using the Fast Fourier Transform (FFT) and the Inverse Fast Fourier Transform (IFFT).
+    Refer to:
+    https://phys.uri.edu/nigh/NumRec/bookfpdf/f13-2.pdf
+    """
+    n = data.shape[0]
+    data_conj = np.conj(data)
+    # Precompute FFT of conjugated data once
+    fft_data_conj = np.fft.fft(data_conj)
+
+    # Convert taus to indices for array slicing
+    # Ensure all tau values map to valid indices in data array
+    indices = taus % n
+
+    CFSD = np.zeros(len(alphas), dtype=float)
+
+    for j, alpha in enumerate(alphas):
+        # Compute exponential term and modulated signal
+        exp_term = np.exp(-2j * np.pi * alpha * np.arange(n))
+        y = data * exp_term
+
+        # Compute cross-correlation via FFT for all possible shifts
+        fft_y = np.fft.fft(y)
+        cross_corr = np.fft.ifft(fft_y * np.conj(fft_data_conj)) / n
+
+        # Extract relevant taus and compute spectral density
+        CAF = cross_corr[indices]
+        csd = np.fft.fft(CAF)
+        CFSD[j] = np.sum(np.abs(csd))
+
+    return CFSD
+
+
 # calculate quality index based on CFSD
 def get_q_index(cfsd):
     return np.max(cfsd[1:])/np.sum(cfsd[1:])
@@ -102,13 +140,18 @@ cf_low=0
 cf_high=1.5
 alphas = np.arange(cf_low,cf_high, 0.1)
 taus = np.arange(-1000, 1000)
+
+# # Run the loop with the original implementation
+start_time = time.time()
 for i in range(0,len(data)-window_length+1,int(step_length)):
     data_seg=data[i:i+window_length]
     CFSD = get_cfsd(alphas,data_seg)
     q_index = get_q_index(CFSD)
     data_q_index.append(q_index)
     print(f"q_index for {i}",q_index)
-#plt.plot(data_q_index)
+end_time = time.time()
+print(f"Original version execution time: {end_time - start_time} s")
+# plt.plot(data_q_index)
 np.savetxt("data_q_index_2_window.txt", data_q_index)
 
 # outcome overview
@@ -120,5 +163,28 @@ axes[0].set_title("PCG signal")
 
 axes[1].plot(np.linspace(0, len(data)/sample_rate, len(data_q_index)), data_q_index)
 axes[1].set_title("Quality index")
-plt.savefig("output.png")
+plt.savefig("output_original.png")
 
+# Repeat the loop for optimized version
+start_time = time.time()
+data_q_index = []
+for i in range(0, len(data) - window_length + 1, int(step_length)):
+    data_seg = data[i : i + window_length]
+    CFSD_optimized = get_cfsd_optimized(data_seg, alphas, taus)
+    q_index = get_q_index(CFSD_optimized)
+    data_q_index.append(q_index)
+    print(f"q_index for {i}", q_index)
+end_time = time.time()
+print(f"Optimized version execution time: {end_time - start_time} s")
+np.savetxt("data_q_index_2_window_optimized.txt", data_q_index)
+
+# outcome overview
+fig, axes = plt.subplots(2, 1, figsize=(10, 8))  # 2x2 grid of subplots
+
+# Plot data in each subplot
+axes[0].plot(np.linspace(0, len(data) / sample_rate, len(data)), data)
+axes[0].set_title("PCG signal")
+
+axes[1].plot(np.linspace(0, len(data) / sample_rate, len(data_q_index)), data_q_index)
+axes[1].set_title("Quality index")
+plt.savefig("output_optimized.png")
