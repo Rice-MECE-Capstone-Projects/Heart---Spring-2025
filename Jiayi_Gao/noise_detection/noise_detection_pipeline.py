@@ -10,16 +10,23 @@ def plot_signal(data,title):
     plt.title(title)
     plt.show()
     return
+def down_sampling(data, samplerate, target_fre):
+    factor = int(samplerate / target_fre)
+    return int(samplerate / factor), data[::factor]
 
 
 
 patient_id=sys.argv[1]
 pos=sys.argv[2]
 data_path='./data/'+patient_id+'/'+patient_id+'_'+pos+'.wav'
-#data_path='./data/New_N_001.wav'
+
 samplerate, data = load_wav(data_path)
-#data=np.hstack((data, data))
+target_fre=2000
+samplerate,data= down_sampling(data,samplerate,target_fre)
+data= pre_process(data)
 plot_signal(data,'Original Signal')
+
+# start phase 1
 
 start = 0
 end = start+4
@@ -28,8 +35,23 @@ ref_seg=[]
 while end <= len(data)/samplerate:
     result=noise_detection_phase_1(patient_id,pos,start,end)
     if result:
-        ref_seg.append(start)
+        ref_seg.append(result)
     start=start+0.5
     end=end+0.5
 
-print(ref_seg)
+ref=ref_seg[0]
+
+# start phase 2
+from noise_detect_phase_2 import *
+
+ref_te=ref_max_te(ref, samplerate)
+for i in range(0,len(data)-len(ref),len(ref)):
+    test=data[i:i+len(ref)]
+    # first criteria
+    srms_evaluate(ref,test,samplerate)
+    # second criteria
+    rte=test_rte(test,samplerate,ref_te)
+    te_evaluate(rte)
+    
+
+
