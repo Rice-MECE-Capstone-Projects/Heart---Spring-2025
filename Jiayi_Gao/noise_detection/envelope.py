@@ -53,8 +53,8 @@ def normalized_correlation(x, w):
 
 def normalize_envelope(signal):
     median=np.median(signal)
-    max=np.abs(np.max(signal))
+    max_value=np.max(np.abs(signal))
     normalized_signal=np.zeros_like(signal)
     for i in range(len(signal)):
-        normalized_signal[i]=(signal[i]-median)/max
+        normalized_signal[i]=(signal[i]-median)/max_value
     return normalized_signal

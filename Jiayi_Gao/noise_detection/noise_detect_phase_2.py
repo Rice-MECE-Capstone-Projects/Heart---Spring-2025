@@ -4,13 +4,12 @@ from scipy.signal import ShortTimeFFT
 # spectral energy
 def stft_win(signal,fs):
     N=len(signal)
-    x=np.linspace(0, N - 1, N)
     win=np.hanning(N)
     for i in range(N):
         if i > N/2:
             win[i]=0
     SFT=ShortTimeFFT(win=win,fs=fs,hop=1)
-    STFT=np.real(SFT.stft(signal))
+    STFT=np.abs(SFT.stft(signal))
     return STFT
 def root_mean_square(stft):
     s_rms=np.zeros(stft.shape[0])
@@ -21,7 +20,7 @@ def srms_evaluate(ref,test,fs):
     ref_stft=stft_win(ref,fs)
     test_stft=stft_win(test,fs)
     ref_rms=root_mean_square(ref_stft)
-    test_rms=root_mean_square(test)
+    test_rms=root_mean_square(test_stft)
     coef=np.corrcoef(ref_rms,test_rms)[0][1]
     if coef>0.98:
         print("Segment passed spectral RMS test")
@@ -29,24 +28,21 @@ def srms_evaluate(ref,test,fs):
     else:
         print("Segment failed spectral RMS test, correlation coefficient:",coef)
         return False
-
 # temporal energy
 def ref_max_te(ref,fs):
-    tw=0.05*fs
+    tw=int(0.05*fs)
     max_te=0
-    for i in range(0,len(ref),tw):
+    for i in range(0,len(ref),int(tw)):
         te=np.sum([x**2 for x in ref[i:i+tw]])
         if te>max_te:
             max_te=te
     return max_te
-
 def test_rte(test,fs,ref_te):
-    tw=0.05*fs
-    rte=np.zeros(len(test)//tw)
-    for i in range(0,len(test),tw):
-        rte[i]=np.sum([x**2 for x in test[i:i+tw]])/ref_te
+    tw=int(0.05*fs)
+    rte=np.zeros(int(len(test)//tw))
+    for i in range(0,rte.shape[0]):
+        rte[i]=np.sum([x**2 for x in test[i*tw:i*tw+tw]])/ref_te
     return rte
-
 def te_evaluate(rte):
     for r in rte:
         if r>3:
@@ -54,3 +50,4 @@ def te_evaluate(rte):
             return False
     print("passed temporal energy test")
     return True
+

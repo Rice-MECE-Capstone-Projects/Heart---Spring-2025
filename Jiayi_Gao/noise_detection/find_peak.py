@@ -5,7 +5,7 @@ from scipy.signal import find_peaks
 def find_promin_peaks(signal,fs,est_heart_cycle):
 
     window_size=int(fs*est_heart_cycle)
-    num_heart_cycles = int(len(signal) /window_size)
+    num_heart_cycles = int(np.floor(len(signal) /window_size))
 
 
     # trim start and end
@@ -15,6 +15,8 @@ def find_promin_peaks(signal,fs,est_heart_cycle):
             #print(peak)
             peaks=np.delete(peaks,np.where(peaks==peak))
     #print(peaks)
+    if len(peaks)==0:
+        return []
     highest_peak = peaks[np.argmax(signal[peaks])]
 
     selected_peaks = [highest_peak]

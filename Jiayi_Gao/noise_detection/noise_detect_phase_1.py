@@ -10,7 +10,7 @@ from time_frequency_autocor import fre_bands_spectrum, get_auto_cor_bands
 from criteria_2 import check_criteria_2
 from criteria_3 import check_criteria_3
 
-def noise_detection_phase_1(patient_id,patient_pos,start,end):
+def noise_detection_phase_1(patient_id,patient_pos,start,end,est_hr):
     def down_sampling(data, samplerate, target_fre):
         factor = int(samplerate / target_fre)
         return int(samplerate / factor), data[::factor]
@@ -23,12 +23,11 @@ def noise_detection_phase_1(patient_id,patient_pos,start,end):
     # load data
     data_path='./data/'+patient_id+'/'+patient_id+'_'+patient_pos+'.wav'
     #data_path = './data/New_N_001.wav'
+    #data_path = './test_clean_pcg.wav'
     target_fre=2000
     samplerate, data = load_wav(data_path)
-    #data = np.hstack((data, data))
     samplerate,data= down_sampling(data,samplerate,target_fre)
     data= pre_process(data)
-    #plot_signal(data,'original signal')
     data_time_eva=data[int(start*samplerate):int(end*samplerate)]
 
     # Phase 1
@@ -47,24 +46,20 @@ def noise_detection_phase_1(patient_id,patient_pos,start,end):
     # heart rate estimation using SVD, typical heart cycle 500-1200ms
     #est_heart_cycle=60/find_hr_single_peak(corr,samplerate)
 
-    est_heart_cycle=find_hr_SVD(corr,samplerate)
-    est_heart_cycle_2=find_hr_single_peak(corr,samplerate)
-    #print("Estimated heart cycle using SVD: ",est_heart_cycle,"s")
-    #print("Estimated heart cycle using SVD: ",est_heart_cycle_2,"s")
 
     # need a heart rate choosing mechanism
 
     # select the prominent peaks
     # use estimated heart rate from previous step
-    promin_peaks=find_promin_peaks(corr,samplerate,est_heart_cycle_2)
+    promin_peaks=find_promin_peaks(corr,samplerate,est_hr)
     #print([int(x)/samplerate for x in promin_peaks])
     peak_indice=np.sort([int(x) for x in promin_peaks])
 
     # plot peaks
-    #plt.plot(np.linspace(0, len(corr)/samplerate, len(corr)), corr)
-    #plt.title("auto correlation of envelop with peaks")
-    #plt.scatter(np.linspace(0, len(data)/samplerate, len(data))[peak_indice], corr[peak_indice], color='red', s=50, label="Highlighted Points", zorder=3)
-    #plt.show()
+    plt.plot(np.linspace(0, len(corr)/samplerate, len(corr)), corr)
+    plt.title("auto correlation of envelop with peaks")
+    plt.scatter(np.linspace(0, len(data)/samplerate, len(data))[peak_indice], corr[peak_indice], color='red', s=50, label="Highlighted Points", zorder=3)
+    plt.show()
     #print([corr[p] for p in peak_indice])
 
     # check criteria 1
@@ -80,6 +75,15 @@ def noise_detection_phase_1(patient_id,patient_pos,start,end):
 
     # auto correlation of each frequency band
     as_k=get_auto_cor_bands(fre_bands)
+    fig, axes = plt.subplots(15, 1, figsize=(15, 10), sharex=True)
+
+    for i in range(15):
+
+        axes[i].plot(np.linspace(0,as_k.shape[1]/samplerate,fre_bands.shape[1]),as_k[i], label=f"Row {i+1}")
+        plt.xlim(0,as_k.shape[1]/samplerate)
+    axes[-1].set_xlabel("Time (s)")
+    axes[-1].set_ylabel("Frequency (Hz)")
+    plt.show()
 
     # check criteria 2 monotonicity
     c2=check_criteria_2(as_k)
@@ -87,11 +91,10 @@ def noise_detection_phase_1(patient_id,patient_pos,start,end):
         return False
 
     ## check criteria 3 peak alignment
-    c3=check_criteria_3(as_k,est_heart_cycle_2,samplerate)
+    c3=check_criteria_3(as_k,est_hr,samplerate)
     if not c3:
         return False
 
 
-    return True
-
+    return data_time_eva
 
