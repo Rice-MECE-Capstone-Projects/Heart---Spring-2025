@@ -1,6 +1,5 @@
 
-Code to generate the plots for 
-[Designing Generic FIR Filters with pyFDA and NumPy](https://tomverbeure.github.io/2020/10/11/Designing-Generic-FIR-Filters-with-pyFDA-and-Numpy.html).
+Code to generate the plots for generic FIR filters
 
-Just run `./remez_example.py` and `./remez_example_find_n.py`.
+Run `./remez_example.py` and `./remez_example_find_n.py`.
 
