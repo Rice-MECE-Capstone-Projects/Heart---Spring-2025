@@ -1,6 +1,5 @@
 
-Code to generate the plots for 
-[PDM Microphones and Sigma-Delta A/D Conversion](https://tomverbeure.github.io/2020/10/04/PDM-Microphones-and-Sigma-Delta-Conversion.html)
+Code to generate the plots for sigma-delta modulator(PDM microphone)
 
-Just run `./sigma_delta.py`.
+Run `./sigma_delta.py`.
 
