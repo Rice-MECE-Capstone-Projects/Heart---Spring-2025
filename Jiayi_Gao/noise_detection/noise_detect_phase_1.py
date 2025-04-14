@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from load_data import load_wav,pre_process
+from load_data import load_wav,pre_process,down_sample
 from scipy.signal import hilbert
 from envelope import filter, normalized_correlation, normalize_envelope
 from hr_estimate import find_hr_SVD, find_hr_single_peak
@@ -11,9 +11,6 @@ from criteria_2 import check_criteria_2
 from criteria_3 import check_criteria_3
 
 def noise_detection_phase_1(patient_id,patient_pos,start,end,est_hr):
-    def down_sampling(data, samplerate, target_fre):
-        factor = int(samplerate / target_fre)
-        return int(samplerate / factor), data[::factor]
     def plot_signal(data, title):
         plt.plot(np.linspace(0, len(data) / samplerate, len(data)), data)
         plt.title(title)
@@ -21,12 +18,13 @@ def noise_detection_phase_1(patient_id,patient_pos,start,end,est_hr):
         return
 
     # load data
-    data_path='./data/'+patient_id+'/'+patient_id+'_'+patient_pos+'.wav'
+    data_path='./data/physionet_data/test_data/'+patient_id+'/'+patient_id+'_'+patient_pos+'.wav'
     #data_path = './data/New_N_001.wav'
     #data_path = './test_clean_pcg.wav'
     target_fre=2000
     samplerate, data = load_wav(data_path)
-    samplerate,data= down_sampling(data,samplerate,target_fre)
+    data= down_sample(data,samplerate)
+    samplerate=2000
     data= pre_process(data)
     data_time_eva=data[int(start*samplerate):int(end*samplerate)]
 
@@ -42,12 +40,6 @@ def noise_detection_phase_1(patient_id,patient_pos,start,end,est_hr):
     corr=corr[0:int(len(corr)/2)]
     #plot_signal(corr,'auto correlation of heart signal envelope')
 
-
-    # heart rate estimation using SVD, typical heart cycle 500-1200ms
-    #est_heart_cycle=60/find_hr_single_peak(corr,samplerate)
-
-
-    # need a heart rate choosing mechanism
 
     # select the prominent peaks
     # use estimated heart rate from previous step
@@ -66,6 +58,8 @@ def noise_detection_phase_1(patient_id,patient_pos,start,end,est_hr):
     c1=check_criteria_1(peak_indice,corr,samplerate)
     if not c1:
         return False
+
+
 
 
     # Periodicity in time-frequency domain
@@ -89,6 +83,8 @@ def noise_detection_phase_1(patient_id,patient_pos,start,end,est_hr):
     c2=check_criteria_2(as_k)
     if not c2:
         return False
+
+
 
     ## check criteria 3 peak alignment
     c3=check_criteria_3(as_k,est_hr,samplerate)

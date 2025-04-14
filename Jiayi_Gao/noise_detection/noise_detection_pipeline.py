@@ -19,11 +19,11 @@ def down_sampling(data, samplerate, target_fre):
 
 patient_id=sys.argv[1]
 pos=sys.argv[2]
-data_path='./data/'+patient_id+'/'+patient_id+'_'+pos+'.wav'
+data_path='./data/physionet_data/test_data/'+patient_id+'/'+patient_id+'_'+pos+'.wav'
 #data_path='./test_clean_pcg.wav'
 samplerate, data = load_wav(data_path)
 target_fre=2000
-samplerate,data= down_sampling(data,samplerate,target_fre)
+samplerate,data=down_sampling(data,samplerate,target_fre)
 data= pre_process(data)
 plot_signal(data,'Original Signal')
 
@@ -44,17 +44,20 @@ while end <= len(data)/samplerate:
     start=start+1
     end=end+1
 
-ref=ref_seg[0]
+if not ref_seg:
+    print(f"fPatient id {patient_id} position {pos} Noisy signal")
+else:
+    ref=ref_seg[0]
+    plot_signal(ref,'Ref Signal')
 
-from noise_detect_phase_2 import *
-
-ref_te=ref_max_te(ref, samplerate)
-for i in range(0,len(data)-len(ref),int(0.5*samplerate)):
-    test=data[i:int(i+len(ref))]
-    # first criteria
-    srms_evaluate(ref,test,samplerate)
-    # second criteria
-    rte=test_rte(test,samplerate,ref_te)
-    te_evaluate(rte)
+    from noise_detect_phase_2 import *
+    ref_te=ref_max_te(ref, samplerate)
+    for i in range(0,len(data)-len(ref),int(0.5*samplerate)):
+        test=data[i:int(i+len(ref))]
+        # first criteria
+        srms_evaluate(ref,test,samplerate)
+        # second criteria
+        rte=test_rte(test,samplerate,ref_te)
+        te_evaluate(rte)
 
 

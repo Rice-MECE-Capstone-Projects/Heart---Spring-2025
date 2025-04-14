@@ -5,14 +5,13 @@ from scipy.signal import find_peaks
 def find_promin_peaks(signal,fs,est_heart_cycle):
 
     window_size=int(fs*est_heart_cycle)
-    num_heart_cycles = int(np.floor(len(signal) /window_size))
+    num_heart_cycles = (int(np.floor(len(signal) /window_size)))
 
 
     # trim start and end
     peaks,property=find_peaks(signal)
     for peak in peaks:
         if peak<window_size or peak >len(signal) - int(0.1 * fs):
-            #print(peak)
             peaks=np.delete(peaks,np.where(peaks==peak))
     #print(peaks)
     if len(peaks)==0:
@@ -37,13 +36,15 @@ def find_promin_peaks(signal,fs,est_heart_cycle):
     for peak in selected_peaks:
         left_peak = find_adjacent_peak(peak, -1)
         #print(left_peak)
-        if left_peak and left_peak not in selected_peaks:
+        if left_peak and left_peak not in selected_peaks and signal[left_peak] > np.mean(signal[selected_peaks])/3:
             selected_peaks.append(left_peak)
             if len(selected_peaks) >= num_heart_cycles:
                 break
         right_peak = find_adjacent_peak(peak, 1)
-        if right_peak and right_peak not in selected_peaks:
+
+        if right_peak and right_peak not in selected_peaks and signal[right_peak] > np.mean(signal[selected_peaks])/3:
             selected_peaks.append(right_peak)
             if len(selected_peaks) >= num_heart_cycles:
                 break
+    #print(selected_peaks)
     return selected_peaks

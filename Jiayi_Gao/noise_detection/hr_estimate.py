@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.linalg import svd
 from scipy.signal import correlate, hilbert
-
+from pre_denoise import pre_denoise
 from envelope import normalize_envelope
 
 
@@ -72,7 +72,7 @@ from scipy.signal import find_peaks
 
 
 def find_hr_single_peak(corr,fs):
-    low_period=int(60/140*fs)
+    low_period=int(60/120*fs)
     high_period=int(60/50*fs)
     segment=corr[low_period:high_period]
     peaks,property=find_peaks(segment)
@@ -85,15 +85,23 @@ def find_hr_single_peak(corr,fs):
 
 
 def pre_find_hr(signal,fs):
-    sig_half=signal[0:int(len(signal)/2)]
-    envelop=np.abs(hilbert(signal))
-    envelop_half=np.abs(hilbert(sig_half))
-    normalized=normalize_envelope(envelop)
-    normalized_hlf=normalize_envelope(envelop_half)
-    corr=np.correlate(normalized,normalized,mode="full")
-    corr_half=np.correlate(normalized_hlf,normalized_hlf,mode="full")
-    print(find_hr_single_peak(corr_half,fs))
-    print(find_hr_single_peak(corr,fs))
-    print(find_hr_SVD(corr,fs))
-    print(find_hr_SVD(corr_half,fs))
-    return find_hr_single_peak(corr,fs)
+    # randomly select 10 segments
+    signal=pre_denoise(signal,fs)
+    num_est=6
+    sub_sig_len=int(len(signal)/2)
+    rng = np.random.default_rng()
+    starts=rng.integers(0, len(signal) - sub_sig_len + 1, size=num_est)
+    subsegments = [signal[start:start + sub_sig_len] for start in starts]
+    def seg_est(sig):
+        envelope_sig=normalize_envelope(np.abs(hilbert(sig)))
+        corr_sig=correlate(envelope_sig,envelope_sig,mode='full',method='fft')
+        corr_sig=corr_sig[0:int(len(corr_sig)/2)]
+        return round(float(find_hr_single_peak(corr_sig,fs)),2)
+    est_hr=[]
+    #for seg in subsegments:
+    #   est_hr.append(seg_est(seg))
+    est_hr.append(seg_est(signal))
+    est_hr.append(seg_est(signal[0:int(len(signal)/2)]))
+    est_hr.append(seg_est(signal[int(len(signal)/2):]))
+    #print(seg_est(signal))
+    return np.max(est_hr)
