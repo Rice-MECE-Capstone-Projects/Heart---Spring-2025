@@ -2,7 +2,7 @@ import sys
 import subprocess
 import numpy as np
 from matplotlib import pyplot as plt
-from load_data import load_wav,pre_process
+from load_data import load_wav,pre_process,down_sample
 from noise_detect_phase_1 import noise_detection_phase_1
 from hr_estimate import pre_find_hr
 
@@ -11,9 +11,6 @@ def plot_signal(data,title):
     plt.title(title)
     plt.show()
     return
-def down_sampling(data, samplerate, target_fre):
-    factor = int(samplerate / target_fre)
-    return int(samplerate / factor), data[::factor]
 
 
 
@@ -22,8 +19,9 @@ pos=sys.argv[2]
 data_path='./data/physionet_data/test_data/'+patient_id+'/'+patient_id+'_'+pos+'.wav'
 #data_path='./test_clean_pcg.wav'
 samplerate, data = load_wav(data_path)
-target_fre=2000
-samplerate,data=down_sampling(data,samplerate,target_fre)
+
+data=down_sample(data,samplerate)
+samplerate=2000
 data= pre_process(data)
 plot_signal(data,'Original Signal')
 

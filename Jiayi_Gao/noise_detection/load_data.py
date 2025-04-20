@@ -21,7 +21,6 @@ def pre_process(data):
 def down_sample(signal, fs):
     target_fs = 2000
     decimation_factor = int(fs / target_fs)
-
     if fs % target_fs != 0:
         raise ValueError("Original sampling rate must be an integer multiple of 1000 Hz.")
     # Use decimate with FIR filter for better quality (zero-phase by default)

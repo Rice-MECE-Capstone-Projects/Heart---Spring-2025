@@ -14,7 +14,7 @@ def check_criteria_2(as_k):
         else:
             sg_11[i - 10] = as_k[i]
     phi_sg = [SVD_eva(sg_1), SVD_eva(sg_6), SVD_eva(sg_11)]
-    print([float(x) for x in phi_sg])
+    #print([float(x) for x in phi_sg])
     if phi_sg[0]>phi_sg[1]>phi_sg[2] or phi_sg[0]<phi_sg[1]<phi_sg[2] :
         print("Passed criteria 2")
         return True

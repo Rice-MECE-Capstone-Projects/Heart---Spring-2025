@@ -19,9 +19,6 @@ def noise_detection_phase_1(patient_id,patient_pos,start,end,est_hr):
 
     # load data
     data_path='./data/physionet_data/test_data/'+patient_id+'/'+patient_id+'_'+patient_pos+'.wav'
-    #data_path = './data/New_N_001.wav'
-    #data_path = './test_clean_pcg.wav'
-    target_fre=2000
     samplerate, data = load_wav(data_path)
     data= down_sample(data,samplerate)
     samplerate=2000
@@ -32,17 +29,11 @@ def noise_detection_phase_1(patient_id,patient_pos,start,end,est_hr):
 
     # extract envelop of HS components by Hilbert transform and Gammatone band-pass filter and auto correlation
     envelope=np.abs(hilbert(data_time_eva))
-    envelope=np.abs(filter(T=1/samplerate,input=envelope,freq_low=0,freq_high=target_fre/2))
+    envelope=np.abs(filter(T=1/samplerate,input=envelope,freq_low=0,freq_high=samplerate/2))
     envelope=normalize_envelope(envelope)
-    #plot_signal(envelope,'envelope of heart signal')
     win=np.hanning(envelope.shape[0])
     corr=normalized_correlation(envelope,win)
     corr=corr[0:int(len(corr)/2)]
-    #plot_signal(corr,'auto correlation of heart signal envelope')
-
-
-    # select the prominent peaks
-    # use estimated heart rate from previous step
     promin_peaks=find_promin_peaks(corr,samplerate,est_hr)
     #print([int(x)/samplerate for x in promin_peaks])
     peak_indice=np.sort([int(x) for x in promin_peaks])
