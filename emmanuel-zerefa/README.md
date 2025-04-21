@@ -8,11 +8,12 @@ This repo contains code associated with a neural network based denoising pipelin
 
 ### A Guide to u-net.ipynb
 This file is split into 9 sections. I'll go into each of them soon. First though, some general notes about the notebook:
-- Every so often in the notebook I had an important design decision, note, or variable to highlight. What I did in these particularly important areas was leave a comment containing the string "!impt". To not miss these things, I'd highly recommend doing ctrl+F in the notebook for "!impt" (without quotes) to not miss any crucial information.
-- The notebook assumes you have the following datasets installed locally: PASCAL, Physionet 2016, Physionet 2022, ARCA23K, ESC-50, HAN. If you have great interest in running this notebook locally, message me on Slack and I'll send you all of these datasets in the structure the notebook expects them to be in.
+- Every so often in the notebook I had an important design decision, note, or variable to highlight. What I did in these particularly important areas was leave a comment containing the string "!impt". I'd highly recommend doing ctrl+F in the notebook for "!impt" (without quotes) to not miss any crucial information.
+- The notebook assumes you have the following datasets installed locally: PASCAL, Physionet 2016, Physionet 2022, ARCA23K, ESC-50, HAN. If you have great interest in running this notebook locally, message me on Slack and I'll send you all of these datasets organized exactly as the notebook expects
 - The notebook itself is fairly heavily annotated and has frequent markdown headers explaining the purpose of each section and subsection of the model. There are several hundred comments. Besides this README, which exists to inform you what to expect,  I hope you will find that the pipeline notebook is fairly self-explanatory and easy to navigate and understand.
  
-That is all for general information. Now, a guide to each section:
+That's all for general information. Now, a guide to each section:
+
 #### Section 0 - Introduction
 This section contains imports, filepath definitions, and optionally setting environment variables if the notebook is being run on cloud GPUs. Ideally this should be the only section a user would need to edit if they ran this notebook.
 #### Section 1 - Loading the Data
