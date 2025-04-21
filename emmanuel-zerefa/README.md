@@ -20,7 +20,7 @@ This section contains data exploration, mostly in pandas. Data is loaded in from
 #### Section 2 - Normalization
 This section concerns creating a toolkit to modify and analyze single audio files with. Functions to load a signal from a filepath, filter a signal, resample a signal, and plot the spectrum of a signal are introduced here.
 #### Section 3 - Signal Combination
-This section concerns creating a toolkit to modify multiple audio files with. Functions to do things like match the lengths of two signals and combine two signals at a certain SNR are introduced here. Also defined here are functions to randomly fetch noise files from noise datasets are defined here, as are functions to measure the extend of noise contamination (such as RMSE and SNR measurements).
+This section concerns creating a toolkit to modify multiple audio files with. Functions to do things like match the lengths of two signals and combine two signals at a certain SNR are introduced here. Also defined here are functions to randomly fetch noise files from noise datasets and  functions to measure the extend of noise contamination (such as through RMSE and SNR measurements).
 #### Section 4 - Making STFT Features
 This is a legacy section which is currently no longer referenced anywhere else in the pipeline. However this section contains code for extracting frequency-domain representations of audio signals and associated features.  
 #### Section 5 - Making Train/Val/Test Data
@@ -43,9 +43,9 @@ In this section, model architectures are defined, along with optimizers, loss fu
 1. Lite_UNet: This is a U-Net inspired model except fairly short and without skip-connections
 2. U_Net: This is more or less a typical U-Net model, except one dimensional.
 #### Section 7 - Model Training
-This section is where model training occurs, and also contains functions are written to measure weighted/unweighted validation loss as well as visualize the model's progression during training. Overfitting is measured in various ways (e.g. patience, rising validation loss, large gap between training and validation loss), using weighted validating loss.
+This section is where model training occurs, and also contains functions are written to measure weighted/unweighted validation loss as well as visualize the model's progression during training. Overfitting is measured in various ways (e.g. patience, rising validation loss, large gap between training and validation loss), using weighted validation loss.
 #### Section 8 - Measuring Model Performance
-This is the final section. It is where model performance is quantified (using RMSE pre and post running the model) on the training data, and where the model's denoising is visualized on a small subset of PCG recordings. 
+This is the final section. It is where model performance is quantified (using RMSE before and after running the model) on the test data, and where the model's denoising is visualized on a small subset of PCG recordings. 
 
 ### Conclusion
-I hope this has been an insightful document and that it helps you better understand the flow of the denoising pipeline. Don't forget to ctrl+F for "!impt" to not miss anything though. 
+I hope this has been an insightful document and that it helps you better understand the flow of the denoising pipeline. Don't forget to ctrl+F for "!impt" in the actual notebook to not miss any key info though. 
