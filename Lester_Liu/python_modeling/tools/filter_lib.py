@@ -25,7 +25,7 @@ def fir_calc_filter(Fs, Fpb, Fsb, Apb, Asb, N):
             N+1,                        # Desired number of taps
             bands,                      # All the band inflection points
             [1,0],                      # Desired gain for each of the bands: 1 in the pass band, 0 in the stop band
-            [w_pb, w_sb]
+           weight = [w_pb, w_sb]
             )               
     
     (w,H) = signal.freqz(h)
