@@ -20,7 +20,7 @@ h = signal.remez(
       N+1,                      # Desired number of taps
       [0., Fpb/Fs, Fsb/Fs, .5], # Filter inflection points
       [1,0],          # Desired gain for each of the bands: 1 in the pass band, 0 in the stop band
-      [w_pb, w_sb]    # weights used to get the right ripple and attenuation
+      weight = [w_pb, w_sb]    # weights used to get the right ripple and attenuation
     )               
 
 print(h)
